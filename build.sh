@@ -1,12 +1,16 @@
 #!/bin/bash
+
 #################### 变量定义 ####################
-mysql_user="mydb_slave_user"    # 主服务器允许从服务器登录的用户名
-mysql_password="mydb_slave_pwd" # 主服务器允许从服务器登录的密码
-root_password="111"             # 每台服务器的root密码
+mysql_user="qimai_slave_user"    # 主服务器允许从服务器登录的用户名
+mysql_password="123456" # 主服务器允许从服务器登录的密码
+root_password="123456"             # 每台服务器的root密码
+
 # 主库列表
-master_container=mysql_master
+master_container=qimai_mysql_master
+
 # 从库列表
-slave_containers=(mysql_slave mysql_slave2)
+slave_containers=(qimai_mysql_slave qimai_mysql_slave2)
+
 # 所有的数据库集群列表
 all_containers=("$master_container" "${slave_containers[@]}")
 
@@ -19,7 +23,7 @@ docker-ip() {
     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$@"
 }
 
-#################### docker-compose初始化 ####################
+# #################### docker-compose初始化 ####################
 docker-compose down
 rm -rf ./master/data/* ./slave/data/* ./slave2/data/*
 docker-compose build
@@ -37,15 +41,16 @@ done
 
 #################### 主服务器操作 ####################开始
 # 在主服务器上添加数据库用户
-priv_stmt='GRANT REPLICATION SLAVE ON *.* TO "'$mysql_user'"@"%" IDENTIFIED BY "'$mysql_password'"; FLUSH PRIVILEGES;'
-
-docker exec $master_container sh -c "export MYSQL_PWD='$root_password'; mysql -u root -e '$priv_stmt'"
+priv_stmt="GRANT REPLICATION SLAVE ON *.* TO "'$mysql_user'"@"%" IDENTIFIED BY "'$mysql_password'";"
+docker exec $master_container sh -c "export MYSQL_PWD='$root_password'; mysql -u root -e "$priv_stmt""
+echo '----------------------------------------------------------------------------------------------------------------------------------'
 
 # 查看主服务器的状态
 MS_STATUS=`docker exec $master_container sh -c 'export MYSQL_PWD='$root_password'; mysql -u root -e "SHOW MASTER STATUS"'`
 
 # binlog文件名字,对应 File 字段,值如: mysql-bin.000004
 CURRENT_LOG=`echo $MS_STATUS | awk '{print $6}'`
+
 # binlog位置,对应 Position 字段,值如: 1429
 CURRENT_POS=`echo $MS_STATUS | awk '{print $7}'`
 

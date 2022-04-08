@@ -11,7 +11,7 @@ skip-host-cache
 skip-name-resolve
 
 # 数据库编号, 要具有唯一性, 不能跟其他数据库重复, 方便同步区分
-server-id = 22
+server-id=22
 
 # mysql日志
 log_bin = /var/log/mysql/mysql-bin.log
